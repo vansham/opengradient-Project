@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Contract Auditor | OpenGradient</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 min-h-screen text-white">
+    
+    <!-- Header -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                🔒 AI Smart Contract Auditor
+            </h1>
+            <p class="text-gray-300 text-lg">
+                Powered by OpenGradient & GPT-4
+            </p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-6">
+            
+            <!-- Left: Input -->
+            <div class="bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>📝</span> Solidity Contract
+                </h2>
+                
+                <textarea 
+                    id="contractCode"
+                    class="w-full h-64 bg-gray-900 text-white p-4 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none font-mono text-sm"
+                    placeholder="pragma solidity ^0.8.0;
+
+contract MyContract {
+    // Paste your Solidity code here
+}"
+                ></textarea>
+
+                <button 
+                    onclick="auditContract()"
+                    id="auditBtn"
+                    class="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                >
+                    🔍 Audit Contract
+                </button>
+
+                <!-- Example Contract -->
+                <button 
+                    onclick="loadExample()"
+                    class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm transition-all"
+                >
+                    Load Example Contract
+                </button>
+            </div>
+
+            <!-- Right: Results -->
+            <div class="bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>📊</span> Audit Results
+                </h2>
+
+                <div id="results" class="hidden">
+                    <!-- Security Score -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-gray-300 font-semibold">Security Score</span>
+                            <span id="scoreText" class="text-3xl font-bold"></span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-4">
+                            <div id="scoreBar" class="h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Issue Counts -->
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <div class="bg-red-900/30 border border-red-500 rounded-lg p-3 text-center">
+                            <div class="text-red-400 text-sm font-semibold">Critical</div>
+                            <div id="criticalCount" class="text-2xl font-bold text-red-300">0</div>
+                        </div>
+                        <div class="bg-orange-900/30 border border-orange-500 rounded-lg p-3 text-center">
+                            <div class="text-orange-400 text-sm font-semibold">High</div>
+                            <div id="highCount" class="text-2xl font-bold text-orange-300">0</div>
+                        </div>
+                        <div class="bg-yellow-900/30 border border-yellow-500 rounded-lg p-3 text-center">
+                            <div class="text-yellow-400 text-sm font-semibold">Medium</div>
+                            <div id="mediumCount" class="text-2xl font-bold text-yellow-300">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-2">Summary</h3>
+                        <p id="summary" class="text-gray-200"></p>
+                    </div>
+
+                    <!-- Raw Response (collapsible) -->
+                    <details class="mt-4">
+                        <summary class="cursor-pointer text-sm text-gray-400 hover:text-gray-200">
+                            View Full Analysis
+                        </summary>
+                        <pre id="rawResponse" class="mt-2 bg-gray-900 p-3 rounded text-xs text-gray-300 overflow-auto max-h-48"></pre>
+                    </details>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loading" class="hidden text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+                    <p class="text-gray-300">Analyzing contract with AI...</p>
+                </div>
+
+                <!-- Initial State -->
+                <div id="placeholder" class="text-center py-12 text-gray-400">
+                    <svg class="mx-auto h-24 w-24 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>Paste your contract and click "Audit" to get started</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-12 text-gray-400 text-sm">
+            <p>Built with ❤️ using <a href="https://opengradient.ai" class="text-blue-400 hover:text-blue-300" target="_blank">OpenGradient</a></p>
+            <p class="mt-2">Powered by GPT-4 | Deployed on Vercel</p>
+        </div>
+    </div>
+
+    <script>
+        // CHANGE THIS to your deployed backend URL
+        const API_URL = 'http://localhost:8000';  // Will update after deployment
+
+        function loadExample() {
+            document.getElementById('contractCode').value = `pragma solidity ^0.8.0;
+
+contract VulnerableBank {
+    mapping(address => uint) public balances;
+    
+    function deposit() public payable {
+        balances[msg.sender] += msg.value;
+    }
+    
+    // VULNERABLE: Reentrancy attack possible!
+    function withdraw() public {
+        uint amount = balances[msg.sender];
+        require(amount > 0, "No balance");
+        
+        // Sends before updating state (BAD!)
+        payable(msg.sender).transfer(amount);
+        balances[msg.sender] = 0;
+    }
+}`;
+        }
+
+        async function auditContract() {
+            const code = document.getElementById('contractCode').value.trim();
+            
+            if (!code) {
+                alert('Please enter a smart contract to audit');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('placeholder').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('auditBtn').disabled = true;
+            document.getElementById('auditBtn').textContent = '⏳ Auditing...';
+
+            try {
+                const response = await fetch(`${API_URL}/audit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contract_code: code
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Display results
+                displayResults(data);
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+                document.getElementById('placeholder').classList.remove('hidden');
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('auditBtn').disabled = false;
+                document.getElementById('auditBtn').textContent = '🔍 Audit Contract';
+            }
+        }
+
+        function displayResults(data) {
+            // Show results panel
+            document.getElementById('results').classList.remove('hidden');
+
+            // Update score
+            const score = data.score || 0;
+            document.getElementById('scoreText').textContent = score + '/100';
+            
+            const scoreBar = document.getElementById('scoreBar');
+            scoreBar.style.width = score + '%';
+            
+            // Color based on score
+            if (score >= 80) {
+                scoreBar.className = 'h-4 rounded-full transition-all duration-500 bg-gradient-to-r from-green-500 to-green-600';
+            } else if (score >= 60) {
+                scoreBar.className = 'h-4 rounded-full transition-all duration-500 bg-gradient-to-r from-yellow-500 to-yellow-600';
+            } else {
+                scoreBar.className = 'h-4 rounded-full transition-all duration-500 bg-gradient-to-r from-red-500 to-red-600';
+            }
+
+            // Update counts
+            document.getElementById('criticalCount').textContent = data.critical || 0;
+            document.getElementById('highCount').textContent = data.high || 0;
+            document.getElementById('mediumCount').textContent = data.medium || 0;
+
+            // Update summary
+            document.getElementById('summary').textContent = data.summary || 'No summary available';
+
+            // Update raw response
+            document.getElementById('rawResponse').textContent = data.raw || JSON.stringify(data, null, 2);
+        }
+    </script>
+
+</body>
+</html>
