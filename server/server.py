@@ -3,15 +3,21 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import opengradient as og
-import json
 from web3 import Web3
 
 # Load environment
 load_dotenv()
 
-# Initialize OpenGradient client
-config = json.load(open('/home/codespace/.opengradient_config.json'))
-client = og.Client(private_key='0x' + config['private_key'])
+# Initialize OpenGradient client using environment variable
+PRIVATE_KEY = os.getenv('OG_PRIVATE_KEY')
+if not PRIVATE_KEY:
+    raise ValueError("OG_PRIVATE_KEY environment variable not set")
+
+# Add 0x prefix if not present
+if not PRIVATE_KEY.startswith('0x'):
+    PRIVATE_KEY = '0x' + PRIVATE_KEY
+
+client = og.Client(private_key=PRIVATE_KEY)
 
 # Ensure approval on startup
 try:
